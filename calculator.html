@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Calculator — Map the Gap NYC</title>
+<style>
+  :root {
+    --paper: #EDECE5; --card: #FBFAF6; --ink: #14181F; --gray: #5B6472;
+    --line: #14181F; --hair: #D8D6CB; --red: #C1272D; --red-dark: #6B1414;
+    --amber: #C99A2E; --teal: #1F6F5C; --pink-bg: #F5E1DF;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 28px 18px 80px; }
+  .topnav { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
+    margin-bottom:22px; padding-bottom:14px; border-bottom:1.5px solid var(--line); }
+  .brand { font-size:12px; font-weight:900; letter-spacing:0.06em; text-transform:uppercase; }
+  .brand a { color: var(--ink); text-decoration: none; }
+  .navlinks { display:flex; gap:16px; flex-wrap:wrap; }
+  .navlinks a { font-size:13px; font-weight:700; color:var(--ink); text-decoration:none;
+    border-bottom:2px solid transparent; padding-bottom:1px; }
+  .navlinks a:hover, .navlinks a.current { border-bottom-color:var(--red); }
+  h2.section { font-size: 26px; font-weight: 900; letter-spacing: -0.01em; margin: 0 0 8px; }
+  p.section-note { font-size: 14px; color: var(--gray); line-height: 1.5; margin: 0 0 18px; max-width: 560px; }
+  section.block { margin-bottom: 44px; }
+  .calc-card { background: var(--card); border: 2px solid var(--line); border-radius: 3px; padding: 24px; margin-top: 6px; }
+  label.field-label { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+  input[type="number"], select {
+    width: 100%; padding: 12px 14px; font-size: 16px; font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    border: 1.5px solid var(--line); border-radius: 2px; background: #EEECE3; margin-bottom: 18px;
+  }
+  button.cta { width: 100%; background: var(--ink); color: var(--paper); border: none; padding: 15px;
+    font-size: 14px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 2px; cursor: pointer; font-family: inherit; }
+  .results-card { background: var(--card); border: 2px solid var(--line); border-radius: 3px; padding: 20px 20px 8px; margin-top: 18px; overflow-x: auto; }
+  .results-card h3 { font-size: 16px; font-weight: 900; margin: 0 0 6px; }
+  .results-card .mystat { font-size: 13.5px; line-height: 1.5; color: #2C3340; margin-bottom: 14px; }
+  .results-card .mystat b { color: var(--red); font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  th { text-align: left; padding: 10px 8px; border-bottom: 2px solid var(--line); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase;
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; }
+  td { padding: 10px 8px; border-bottom: 1px solid var(--hair); }
+  tr.hi td { background: var(--pink-bg); }
+  tr.mine td { background: #E1EEE7; font-weight: 700; }
+  /* AMI meter */
+  .meter-wrap { margin: 4px 0 20px; }
+  .meter-title { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 10px; }
+  .meter { position: relative; height: 34px; border: 2px solid var(--line); border-radius: 2px; overflow: visible;
+    display: flex; }
+  .mzone { height: 100%; }
+  .meter-marker { position: absolute; top: -12px; bottom: -12px; width: 0; border-left: 3px solid var(--ink); }
+  .meter-marker::after { content: "YOU"; position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+    font-size: 10px; font-weight: 900; letter-spacing: 0.05em; background: var(--ink); color: var(--paper);
+    padding: 2px 6px; border-radius: 2px; }
+  .meter-scale { display: flex; justify-content: space-between; font-size: 10px; color: var(--gray);
+    margin-top: 16px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .meter-refs { position: relative; height: 30px; margin-top: 2px; }
+  .mref { position: absolute; transform: translateX(-50%); font-size: 9.5px; color: var(--gray); text-align: center;
+    line-height: 1.25; white-space: nowrap; }
+  .mref::before { content: ""; display: block; width: 1.5px; height: 8px; background: var(--gray); margin: 0 auto 2px; }
+  .foot-note { font-size: 11.5px; color: var(--gray); line-height: 1.5; padding: 14px 0 4px;
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="topnav">
+    <span class="brand"><a href="index.html">Map the Gap NYC</a></span>
+    <div class="navlinks">
+      <a href="index.html">Map</a>
+      <a href="calculator.html" class="current">Calculator</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </div>
+  </nav>
+
+  <section class="block" id="calc-section">
+    <h2 class="section">Where do you actually land?</h2>
+    <p class="section-note">Enter your household income. See your real AMI percentage, which lottery bands you'd qualify for, and what rent is genuinely affordable to you — versus what's being sold as affordable.</p>
+
+    <div class="calc-card">
+      <label class="field-label">Gross annual household income</label>
+      <input type="number" id="incomeInput" placeholder="e.g. 42000" inputmode="numeric" />
+      <label class="field-label">Household size</label>
+      <select id="sizeInput">
+        <option value="1">1 person</option><option value="2">2 people</option>
+        <option value="3" selected>3 people</option><option value="4">4 people</option>
+        <option value="5">5 people</option><option value="6">6 people</option>
+      </select>
+      <button class="cta" onclick="showMyNumbers()">Show my numbers</button>
+    </div>
+
+    <div class="results-card" id="resultsCard" style="display:none;">
+      <h3>2026 AMI bands vs. neighborhood reality</h3>
+      <div class="mystat" id="myStat"></div>
+      <div class="meter-wrap">
+        <div class="meter-title">Where you sit on NYC's AMI scale</div>
+        <div class="meter" id="meterZones"></div>
+        <div class="meter-scale"><span>0%</span><span>50%</span><span>100%</span><span>150%</span><span>200%+</span></div>
+        <div class="meter-refs" id="meterRefs"></div>
+      </div>
+      <table>
+        <thead><tr><th>Band</th><th>Max income</th><th>"Affordable" rent</th></tr></thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+      <div class="foot-note">Rent ≈ 30% of band income ÷ 12. Pink rows exceed what the median household in Mott Haven/Hunts Point — the lowest-income area citywide — can afford (30% of income). Green row = your band.</div>
+    </div>
+  </section>
+
+</div>
+<script>
+const REGIONAL = 152700;
+const SIZE_FACTORS = { 1: 0.70, 2: 0.80, 3: 0.90, 4: 1.00, 5: 1.08, 6: 1.16 };
+const AMI_BASE_4P = REGIONAL / SIZE_FACTORS[3];
+const BANDS = [30, 40, 50, 60, 80, 100, 130, 165];
+function fmt(n) { return "$" + Math.round(n).toLocaleString("en-US"); }
+function bandRent(inc) { return Math.round(inc * 0.30 / 12); }
+
+// ---- calculator ----
+
+function renderMeter(myPct) {
+  // scale 0–200%; zones colored by the site's gap palette
+  const zones = [
+    { to: 30,  c: "#4A1414" },
+    { to: 50,  c: "#8B2A1E" },
+    { to: 80,  c: "#D6472F" },
+    { to: 100, c: "#C99A2E" },
+    { to: 130, c: "#7FA88C" },
+    { to: 165, c: "#1F6F5C" },
+    { to: 200, c: "#155246" },
+  ];
+  let prev = 0, html = "";
+  zones.forEach(z => {
+    html += `<div class="mzone" style="width:${(z.to - prev) / 2}%;background:${z.c};"></div>`;
+    prev = z.to;
+  });
+  const clamped = Math.max(0, Math.min(myPct, 200));
+  html += `<div class="meter-marker" style="left:${clamped / 2}%;"></div>`;
+  document.getElementById('meterZones').innerHTML = html;
+
+  // reference points: real neighborhood medians as % of AMI
+  const refs = [
+    { pct: 18,  label: "Mott Haven" },
+    { pct: 55,  label: "Citywide" },
+    { pct: 100, label: "UWS" },
+    { pct: 137, label: "FiDi" },
+  ];
+  document.getElementById('meterRefs').innerHTML = refs.map(r =>
+    `<div class="mref" style="left:${Math.min(r.pct, 200) / 2}%;">${r.label}<br>${r.pct}%</div>`
+  ).join('');
+}
+
+function showMyNumbers() {
+  const income = parseFloat(document.getElementById('incomeInput').value);
+  const size = parseInt(document.getElementById('sizeInput').value, 10);
+  if (!income || income <= 0) { alert("Enter your gross annual household income to see your numbers."); return; }
+
+  const base100 = AMI_BASE_4P * SIZE_FACTORS[size];
+  const myPct = Math.round((income / base100) * 100);
+  const myAfford = Math.round(income * 0.30 / 12);
+
+  const refFloor = 684; // Mott Haven/Hunts Point — lowest-income area citywide
+
+  let myBand = null;
+  for (const p of BANDS) {
+    if (income <= Math.round(base100 * (p / 100))) { myBand = p; break; }
+  }
+
+  document.getElementById('myStat').innerHTML =
+    `${size}-person household earning ${fmt(income)}/yr ≈ <b>${myPct}% of regional AMI</b>. ` +
+    `Rent genuinely affordable to you at the 30% standard: <b>${fmt(myAfford)}/mo</b>.` +
+    (myBand ? ` You'd fall within the <b>${myBand}% AMI</b> band and below.` : ` Your income is above the 165% AMI ceiling — above all lottery bands.`);
+
+  document.getElementById('resultsBody').innerHTML = BANDS.map(p => {
+    const bandInc = Math.round(base100 * (p / 100));
+    const rent = bandRent(bandInc);
+    const cls = (p === myBand) ? 'mine' : (rent > refFloor ? 'hi' : '');
+    return `<tr class="${cls}"><td><b>${p}% AMI</b></td><td>${fmt(bandInc)}</td><td>${fmt(rent)}/mo</td></tr>`;
+  }).join('');
+
+  renderMeter(myPct);
+  document.getElementById('resultsCard').style.display = 'block';
+}
+
+</script>
+</body>
+</html>
