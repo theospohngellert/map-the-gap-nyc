@@ -162,9 +162,8 @@
     <div class="eyebrow">Full city coverage · data-checked July 2026</div>
     <h1 class="title">Map the Gap <span style="color:var(--red);">NYC</span></h1>
     <p class="lede">
-      NYC prices its "affordable housing" against a regional Area Median Income of
-      <a href="https://www.nyc.gov/site/hpd/services-and-information/area-median-income.page" target="_blank" rel="noopener noreferrer" style="color:var(--red);font-weight:700;text-decoration:underline;">$152,700</a> (100% AMI, 3-person household, 2026) — a figure computed across the
-      whole metro region, Westchester included. The median household in Mott Haven earns
+      NYC prices its "affordable housing" against an Area Median Income (AMI) of
+      <a href="https://www.nyc.gov/site/hpd/services-and-information/area-median-income.page" target="_blank" rel="noopener noreferrer" style="color:var(--red);font-weight:700;text-decoration:underline;">$152,700</a> (100% AMI, 3-person household, 2026), a figure computed across the whole metro region, Westchester included. The median household in Mott Haven earns
       <a href="https://coredata.nyc" target="_blank" rel="noopener noreferrer" style="color:var(--red);font-weight:700;text-decoration:underline;">$27,364</a>. This tool shows the gap for every neighborhood in the city, and what
       it means for your rent.
     </p>
@@ -172,7 +171,7 @@
 
   <section class="block" id="map-section">
     <h2 class="section">The gap map</h2>
-    <p class="section-note">All 55 Furman Center sub-borough areas, covering the entire city. Tap a circle, or search and tap below. Color shows how far each area's real median income falls below the regional AMI used to price its "affordable" units.</p>
+    <p class="section-note">All 55 Furman Center neighborhoods, covering the entire city. Tap a circle, or search and tap below. Color shows how far each area's real median income falls below the regional AMI used to price its "affordable" units.</p>
     <div id="map"></div>
     <div class="legend">
       <span><i class="dot" style="background:#4A1414"></i>&lt;25% of AMI</span>
@@ -191,7 +190,7 @@
     <h3>Method &amp; sources</h3>
     <p><b>AMI:</b> HUD FY2026 for the NY metro region, as published by NYC HPD: $152,700 = 100% AMI for a 3-person household. Other household sizes estimated with standard HUD ratios (70/80/90/100/108/116% of the 4-person base). Verify exact figures against HPD's official chart before relying on them.</p>
     <p><b>Neighborhood incomes:</b> NYU Furman Center CoreData.nyc, median household income by sub-borough area, in 2025 dollars. Latest available year per area (2024; one area uses 2023). Neighborhood medians reflect households of all sizes; the regional comparison uses HUD's 3-person figure, the closest match to NYC's average household size of ~2.5. Sub-borough areas approximate the city's 59 community districts; a few low-population districts are combined (e.g. Mott Haven/Hunts Point). All 55 areas — the full city — are included.</p>
-    <p><b>"Affordable" rent:</b> the standard formula — 30% of the band's income ceiling, divided by 12. Actual HPD rent charts vary slightly by unit size and utility allowances.</p>
+    <p><b>"Affordable" rent:</b> the standard formula — 30% of the band's income ceiling, divided by 12. Actual HPD rent charts vary slightly by unit size and utility allowances. Note: under the Block by Block plan, households below 30% AMI entering new HPD-financed homes without vouchers will pay 25% of income for projects closing after June 2026 — the 30% standard used here will slightly overstate their cost burden in those units.</p>
     <p><b>What this prototype isn't yet:</b> live Housing Connect listings, a ZIP-code-level view, or annual auto-refresh. The Census-API pipeline for those is written and ready to run.</p>
   </footer>
 
@@ -268,7 +267,7 @@ function select(id) {
     <div class="name">${a.name}</div>
     <div class="borough">${a.borough.toUpperCase()} · ${a.id}</div>
     <div class="bigstat ${aboveAMI ? 'ok' : ''}">${a.pct}% AMI</div>
-    <div class="rank">#${a.rank} lowest median income of 55 areas citywide</div>
+    <div class="rank">#${a.rank} lowest median income of 55 NYC areas</div>
     <div class="desc">Median household income here: <b>${fmt(a.income)}</b> (${a.year}, 2025$) vs. regional 100% AMI ${fmt(REGIONAL)} (3-person).</div>
 
     <div class="barrow">
@@ -283,7 +282,10 @@ function select(id) {
     ${calloutHTML}
   `;
 
-  renderList(document.getElementById('searchBox').value);
+  document.getElementById('searchBox').value = "";
+  renderList("");
+  const activeRow = document.querySelector('.hoodrow.active');
+  if (activeRow) activeRow.scrollIntoView({ block: "nearest" });
   if (markers[id]) map.panTo(markers[id].getLatLng());
 }
 
