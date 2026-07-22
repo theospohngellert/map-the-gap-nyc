@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Map the Gap — NYC AMI vs. Neighborhood Income</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<style>
+  :root {
+    --paper: #EDECE5; --card: #FBFAF6; --ink: #14181F; --gray: #5B6472;
+    --line: #14181F; --hair: #D8D6CB; --red: #C1272D; --red-dark: #6B1414;
+    --amber: #C99A2E; --teal: #1F6F5C; --pink-bg: #F5E1DF;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 28px 18px 80px; }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+
+  .eyebrow { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--red);
+    font-weight: 700; margin-bottom: 16px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  h1.title { font-size: clamp(2.4rem, 9vw, 3.6rem); font-weight: 900; line-height: 0.98; letter-spacing: -0.01em; margin: 0 0 20px; }
+  p.lede { font-size: 17px; line-height: 1.55; color: #2C3340; max-width: 600px; margin: 0 0 28px; }
+  p.lede b { color: var(--red); }
+  .masthead { border-bottom: 3px solid var(--line); padding-bottom: 24px; margin-bottom: 30px; }
+
+  h2.section { font-size: 26px; font-weight: 900; letter-spacing: -0.01em; margin: 0 0 8px; }
+  p.section-note { font-size: 14px; color: var(--gray); line-height: 1.5; margin: 0 0 18px; max-width: 560px; }
+  section.block { margin-bottom: 44px; }
+
+  #map { width: 100%; height: 400px; border: 2px solid var(--line); border-radius: 2px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px 24px; font-size: 13px; margin-top: 14px; }
+  .legend span { display: flex; align-items: center; gap: 7px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; border: 1.5px solid var(--line); }
+
+  .finder { margin-top: 18px; }
+  input.search {
+    width: 100%; padding: 12px 14px; font-size: 15px; border: 1.5px solid var(--line);
+    border-radius: 2px; background: var(--card); font-family: inherit;
+  }
+  .hoodlist {
+    margin-top: 10px; max-height: 260px; overflow-y: auto;
+    border: 1.5px solid var(--line); border-radius: 2px; background: var(--card);
+  }
+  .hoodrow {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 10px 14px; border-bottom: 1px solid var(--hair); cursor: pointer; font-size: 13.5px;
+  }
+  .hoodrow:last-child { border-bottom: none; }
+  .hoodrow:hover { background: #F1EFE7; }
+  .hoodrow.active { background: var(--ink); color: var(--paper); }
+  .hoodrow .hl { flex: 1; }
+  .hoodrow .hcd { font-size: 10.5px; color: var(--gray); letter-spacing: 0.04em; display: block; }
+  .hoodrow.active .hcd { color: #B7BCC4; }
+  .hoodrow .hpct { font-weight: 700; font-family: ui-monospace, "SF Mono", Menlo, monospace; white-space: nowrap; }
+
+  .gapcard { background: var(--card); border: 2px solid var(--line); border-radius: 3px; padding: 24px 24px 26px; margin-top: 18px; }
+  .gapcard .name { font-size: 24px; font-weight: 900; margin: 0 0 2px; }
+  .gapcard .borough { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gray); margin-bottom: 14px; }
+  .gapcard .bigstat { font-size: 52px; font-weight: 700; color: var(--red); line-height: 1; margin-bottom: 10px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .gapcard .bigstat.ok { color: var(--teal); }
+  .gapcard .rank { font-size: 12px; color: var(--gray); margin-bottom: 10px; }
+  .gapcard .desc { font-size: 14px; color: #2C3340; line-height: 1.5; margin-bottom: 22px; }
+  .barrow { margin-bottom: 16px; }
+  .barrow .lbl { display: flex; justify-content: space-between; gap: 10px; font-size: 13.5px; margin-bottom: 6px; }
+  .barrow .lbl b { font-weight: 700; font-family: ui-monospace, "SF Mono", Menlo, monospace; white-space: nowrap; }
+  .track { height: 26px; background: #EEECE3; border: 1.5px solid var(--line); border-radius: 2px; overflow: hidden; }
+  .fill { height: 100%; }
+  .fill.afford { background: var(--teal); }
+  .fill.b60 { background-image: repeating-linear-gradient(45deg, #D6472F, #D6472F 6px, #EFA394 6px, #EFA394 12px); }
+  .fill.b80 { background: #D6472F; }
+  .fill.b130 { background: var(--red-dark); }
+  .callout { background: var(--pink-bg); border-left: 4px solid var(--red); padding: 14px 16px; font-size: 13.5px; line-height: 1.5; margin-top: 4px; }
+  .callout b { color: var(--red-dark); }
+  .callout.ok { background: #E1EEE7; border-left-color: var(--teal); }
+  .callout.ok b { color: var(--teal); }
+
+  .calc-card { background: var(--card); border: 2px solid var(--line); border-radius: 3px; padding: 24px; margin-top: 6px; }
+  label.field-label { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+  input[type="number"], select {
+    width: 100%; padding: 12px 14px; font-size: 16px; font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    border: 1.5px solid var(--line); border-radius: 2px; background: #EEECE3; margin-bottom: 18px;
+  }
+  button.cta { width: 100%; background: var(--ink); color: var(--paper); border: none; padding: 15px;
+    font-size: 14px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 2px; cursor: pointer; font-family: inherit; }
+
+  .results-card { background: var(--card); border: 2px solid var(--line); border-radius: 3px; padding: 20px 20px 8px; margin-top: 18px; overflow-x: auto; }
+  .results-card h3 { font-size: 16px; font-weight: 900; margin: 0 0 6px; }
+  .results-card .mystat { font-size: 13.5px; line-height: 1.5; color: #2C3340; margin-bottom: 14px; }
+  .results-card .mystat b { color: var(--red); font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  th { text-align: left; padding: 10px 8px; border-bottom: 2px solid var(--line); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase;
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; }
+  td { padding: 10px 8px; border-bottom: 1px solid var(--hair); }
+  tr.hi td { background: var(--pink-bg); }
+  tr.mine td { background: #E1EEE7; font-weight: 700; }
+  .foot-note { font-size: 11.5px; color: var(--gray); line-height: 1.5; padding: 14px 0 4px;
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; }
+
+  .action-card { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;
+    background: var(--ink); color: var(--paper); border-radius: 3px; padding: 20px 22px; margin-top: 10px; }
+  .action-card .t1 { font-size: 16px; font-weight: 900; margin-bottom: 3px; }
+  .action-card .t2 { font-size: 12px; color: #B7BCC4; }
+  .action-card a { background: var(--paper); color: var(--ink); text-decoration: none; padding: 10px 16px;
+    border-radius: 2px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+
+    .topnav { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
+    margin-bottom:22px; padding-bottom:14px; border-bottom:1.5px solid var(--line); }
+  .brand { font-size:12px; font-weight:900; letter-spacing:0.06em; text-transform:uppercase; }
+  .navlinks { display:flex; gap:16px; }
+  .navlinks a { font-size:13px; font-weight:700; color:var(--ink); text-decoration:none;
+    border-bottom:2px solid transparent; padding-bottom:1px; }
+  .navlinks a:hover, .navlinks a.current { border-bottom-color:var(--red); }
+  html { scroll-behavior:smooth; }
+
+  /* About graphics */
+  .fig { background:var(--card); border:2px solid var(--line); border-radius:3px; padding:20px 22px 22px; margin:20px 0; }
+  .fig h4 { font-size:13px; font-weight:900; letter-spacing:0.04em; text-transform:uppercase; margin:0 0 4px; }
+  .fig .fignote { font-size:11.5px; color:var(--gray); margin:0 0 16px; line-height:1.4; }
+  .fbar { margin-bottom:13px; }
+  .fbar .fl { display:flex; justify-content:space-between; gap:10px; font-size:12.5px; margin-bottom:5px; }
+  .fbar .fl b { font-family:ui-monospace,"SF Mono",Menlo,monospace; white-space:nowrap; }
+  .ftrack { position:relative; height:24px; background:#EEECE3; border:1.5px solid var(--line); border-radius:2px; }
+  .ffill { position:absolute; left:0; top:0; bottom:0; }
+  .amiline { position:absolute; top:-6px; bottom:-6px; width:0; border-left:2.5px dashed var(--red); }
+  .amitag { font-size:10.5px; color:var(--red); font-weight:700; margin-top:8px; }
+
+  /* Contact */
+  .contact-card { background:var(--card); border:2px solid var(--line); border-radius:3px; padding:24px; }
+  .contact-card .email-line { font-size:14px; margin-bottom:18px; }
+  .contact-card .email-line a { color:var(--red); font-weight:700; }
+  textarea { width:100%; padding:12px 14px; font-size:15px; font-family:inherit; border:1.5px solid var(--line);
+    border-radius:2px; background:#EEECE3; margin-bottom:18px; min-height:110px; resize:vertical; }
+  input[type="text"] { width:100%; padding:12px 14px; font-size:15px; font-family:inherit;
+    border:1.5px solid var(--line); border-radius:2px; background:#EEECE3; margin-bottom:18px; }
+
+  .about-body { font-size:15.5px; line-height:1.65; color:#2C3340; max-width:640px; }
+  .about-body p { margin:0 0 16px; }
+  .about-body a { color:var(--red); font-weight:700; }
+  .calc-card { background: var(--card); border: 2px solid var(--line); border-radius: 3px; padding: 24px; margin-top: 6px; }
+  label.field-label { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+  input[type="number"], select {
+    width: 100%; padding: 12px 14px; font-size: 16px; font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    border: 1.5px solid var(--line); border-radius: 2px; background: #EEECE3; margin-bottom: 18px;
+  }
+  button.cta { width: 100%; background: var(--ink); color: var(--paper); border: none; padding: 15px;
+    font-size: 14px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 2px; cursor: pointer; font-family: inherit; }
+  .results-card { background: var(--card); border: 2px solid var(--line); border-radius: 3px; padding: 20px 20px 8px; margin-top: 18px; overflow-x: auto; }
+  .results-card h3 { font-size: 16px; font-weight: 900; margin: 0 0 6px; }
+  .results-card .mystat { font-size: 13.5px; line-height: 1.5; color: #2C3340; margin-bottom: 14px; }
+  .results-card .mystat b { color: var(--red); font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  th { text-align: left; padding: 10px 8px; border-bottom: 2px solid var(--line); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase;
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; }
+  td { padding: 10px 8px; border-bottom: 1px solid var(--hair); }
+  tr.hi td { background: var(--pink-bg); }
+  tr.mine td { background: #E1EEE7; font-weight: 700; }
+  /* AMI meter */
+  .meter-wrap { margin: 4px 0 20px; }
+  .meter-title { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 34px; }
+  .meter { position: relative; height: 34px; border: 2px solid var(--line); border-radius: 2px; overflow: visible;
+    display: flex; }
+  .mzone { height: 100%; }
+  .meter-marker { position: absolute; top: -12px; bottom: -12px; width: 0; border-left: 3px solid var(--ink); }
+  .meter-marker::after { content: "YOU"; position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+    font-size: 10px; font-weight: 900; letter-spacing: 0.05em; background: var(--ink); color: var(--paper);
+    padding: 2px 6px; border-radius: 2px; }
+  .meter-scale { display: flex; justify-content: space-between; font-size: 10px; color: var(--gray);
+    margin-top: 16px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .meter-refs { position: relative; height: 30px; margin-top: 2px; }
+  .mref { position: absolute; transform: translateX(-50%); font-size: 9.5px; color: var(--gray); text-align: center;
+    line-height: 1.25; white-space: nowrap; }
+  .mref::before { content: ""; display: block; width: 1.5px; height: 8px; background: var(--gray); margin: 0 auto 2px; }
+  .foot-note { font-size: 11.5px; color: var(--gray); line-height: 1.5; padding: 14px 0 4px;
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; }
+  footer.methods { border-top: 1px solid #B9B6AA; padding-top: 20px; font-size: 12.5px; line-height: 1.65; color: var(--gray); }
+  footer.methods h3 { color: var(--ink); font-size: 16px; margin: 0 0 12px; }
+  footer.methods p { margin: 0 0 14px; }
+  footer.methods b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="topnav">
+    <span class="brand">Map the Gap NYC</span>
+    <div class="navlinks">
+      <a href="index.html" class="current">Map</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </div>
+  </nav>
+
+  <div class="masthead">
+    <div class="eyebrow">Full city coverage · data-checked July 2026</div>
+    <h1 class="title">Map the Gap <span style="color:var(--red);">NYC</span></h1>
+    <p class="lede">
+      NYC prices its "affordable housing" against an Area Median Income (AMI) of
+      <a href="https://www.nyc.gov/site/hpd/services-and-information/area-median-income.page" target="_blank" rel="noopener noreferrer" style="color:var(--red);font-weight:700;text-decoration:underline;">$152,700</a> (100% AMI, 3-person household, 2026), a figure computed across the whole metro region, Westchester included. The median household in Mott Haven earns
+      <a href="https://coredata.nyc" target="_blank" rel="noopener noreferrer" style="color:var(--red);font-weight:700;text-decoration:underline;">$27,364</a>. This tool shows the gap for every neighborhood in the city, and what
+      it means for your rent.
+    </p>
+  </div>
+
+  <section class="block" id="map-section">
+    <h2 class="section">1 &middot; The gap map</h2>
+    <p class="section-note">All 55 Furman Center neighborhoods, covering the entire city. Tap a circle, or search and tap below. Color shows how far each area's real median income falls below the regional AMI used to price its "affordable" units.</p>
+    <div id="map"></div>
+    <div class="legend">
+      <span><i class="dot" style="background:#4A1414"></i>&lt;25% of AMI</span>
+      <span><i class="dot" style="background:#D6472F"></i>25–50% of AMI</span>
+      <span><i class="dot" style="background:#C99A2E"></i>50–75% of AMI</span>
+      <span><i class="dot" style="background:#1F6F5C"></i>&gt;75% of AMI</span>
+    </div>
+    <div class="finder">
+      <input class="search" id="searchBox" placeholder="Search neighborhoods… (e.g. Bushwick, Flushing, Bed)" oninput="renderList(this.value)" />
+      <div class="hoodlist" id="hoodList"></div>
+    </div>
+    <div class="gapcard" id="gapCard"></div>
+  </section>
+
+  <section class="block" id="calc-section">
+    <h2 class="section">2 &middot; Where do you actually land?</h2>
+    <p class="section-note">Enter your household income. See your real AMI percentage, which lottery bands you'd qualify for, and what rent is genuinely affordable to you versus what's being sold as affordable.</p>
+
+    <div class="calc-card">
+      <label class="field-label">Gross annual household income</label>
+      <input type="number" id="incomeInput" placeholder="e.g. 42000" inputmode="numeric" />
+      <label class="field-label">Household size</label>
+      <select id="sizeInput">
+        <option value="1">1 person</option><option value="2">2 people</option>
+        <option value="3" selected>3 people</option><option value="4">4 people</option>
+        <option value="5">5 people</option><option value="6">6 people</option>
+      </select>
+      <button class="cta" onclick="showMyNumbers()">Show my numbers</button>
+    </div>
+
+    <div class="results-card" id="resultsCard" style="display:none;">
+      <h3>2026 AMI bands vs. neighborhood reality</h3>
+      <div class="mystat" id="myStat"></div>
+      <div class="meter-wrap">
+        <div class="meter-title">Where you sit on NYC's AMI scale</div>
+        <div class="meter" id="meterZones"></div>
+        <div class="meter-scale"><span>0%</span><span>50%</span><span>100%</span><span>150%</span><span>200%+</span></div>
+        <div class="meter-refs" id="meterRefs"></div>
+      </div>
+      <table>
+        <thead><tr><th>Band</th><th>Max income</th><th>"Affordable" rent</th></tr></thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+      <div class="foot-note">Rent ≈ 30% of band income ÷ 12. Pink rows exceed what the median household in Mott Haven/Hunts Point — the lowest-income area citywide — can afford (30% of income). Green row = your band.</div>
+    </div>
+  </section>
+
+  <footer class="methods">
+    <h3>Method &amp; sources</h3>
+    <p><b>AMI:</b> HUD FY2026 for the NY metro region, as published by NYC HPD: $152,700 = 100% AMI for a 3-person household. Other household sizes estimated with standard HUD ratios (70/80/90/100/108/116% of the 4-person base). Verify exact figures against HPD's official chart before relying on them.</p>
+    <p><b>Neighborhood incomes:</b> NYU Furman Center CoreData.nyc, median household income by sub-borough area, in 2025 dollars. Latest available year per area (2024; one area uses 2023). Neighborhood medians reflect households of all sizes; the regional comparison uses HUD's 3-person figure, the closest match to NYC's average household size of ~2.5. Sub-borough areas approximate the city's 59 community districts; a few low-population districts are combined (e.g. Mott Haven/Hunts Point). All 55 areas — the full city — are included.</p>
+    <p><b>"Affordable" rent:</b> the standard formula — 30% of the band's income ceiling, divided by 12. Actual HPD rent charts vary slightly by unit size and utility allowances. Note: under the Block by Block plan, households below 30% AMI entering new HPD-financed homes without vouchers will pay 25% of income for projects closing after June 2026 — the 30% standard used here will slightly overstate their cost burden in those units.</p>
+  </footer>
+
+</div>
+
+<script>
+const REGIONAL = 152700;
+
+const AREAS = [{"id":"BK01","name":"Williamsburg/Greenpoint","borough":"Brooklyn","lat":40.714,"lng":-73.953,"income":110478,"year":2024,"pct":72,"afford":2762},{"id":"BK02","name":"Brooklyn Heights/Fort Greene","borough":"Brooklyn","lat":40.692,"lng":-73.98,"income":143878,"year":2024,"pct":94,"afford":3597},{"id":"BK03","name":"Bedford Stuyvesant","borough":"Brooklyn","lat":40.6872,"lng":-73.9418,"income":93350,"year":2024,"pct":61,"afford":2334},{"id":"BK04","name":"Bushwick","borough":"Brooklyn","lat":40.698,"lng":-73.918,"income":102916,"year":2024,"pct":67,"afford":2573},{"id":"BK05","name":"East New York/Starrett City","borough":"Brooklyn","lat":40.666,"lng":-73.882,"income":52999,"year":2024,"pct":35,"afford":1325},{"id":"BK06","name":"Park Slope/Carroll Gardens","borough":"Brooklyn","lat":40.674,"lng":-73.986,"income":188727,"year":2024,"pct":124,"afford":4718},{"id":"BK07","name":"Sunset Park","borough":"Brooklyn","lat":40.645,"lng":-74.012,"income":96723,"year":2024,"pct":63,"afford":2418},{"id":"BK08","name":"North Crown Heights/Prospect Heights","borough":"Brooklyn","lat":40.677,"lng":-73.955,"income":97486,"year":2024,"pct":64,"afford":2437},{"id":"BK09","name":"South Crown Heights","borough":"Brooklyn","lat":40.662,"lng":-73.944,"income":83696,"year":2024,"pct":55,"afford":2092},{"id":"BK10","name":"Bay Ridge","borough":"Brooklyn","lat":40.625,"lng":-74.03,"income":94430,"year":2024,"pct":62,"afford":2361},{"id":"BK11","name":"Bensonhurst","borough":"Brooklyn","lat":40.602,"lng":-73.993,"income":71837,"year":2024,"pct":47,"afford":1796},{"id":"BK12","name":"Borough Park","borough":"Brooklyn","lat":40.633,"lng":-73.99,"income":65556,"year":2024,"pct":43,"afford":1639},{"id":"BK13","name":"Coney Island","borough":"Brooklyn","lat":40.576,"lng":-73.985,"income":45878,"year":2024,"pct":30,"afford":1147},{"id":"BK14","name":"Flatbush","borough":"Brooklyn","lat":40.641,"lng":-73.96,"income":79006,"year":2024,"pct":52,"afford":1975},{"id":"BK15","name":"Sheepshead Bay/Gravesend","borough":"Brooklyn","lat":40.59,"lng":-73.944,"income":68744,"year":2024,"pct":45,"afford":1719},{"id":"BK16","name":"Brownsville/Ocean Hill","borough":"Brooklyn","lat":40.6602,"lng":-73.9086,"income":45976,"year":2024,"pct":30,"afford":1149},{"id":"BK17","name":"East Flatbush","borough":"Brooklyn","lat":40.648,"lng":-73.93,"income":75897,"year":2024,"pct":50,"afford":1897},{"id":"BK18","name":"Flatlands/Canarsie","borough":"Brooklyn","lat":40.63,"lng":-73.906,"income":90878,"year":2024,"pct":60,"afford":2272},{"id":"BX01/02","name":"Mott Haven/Hunts Point","borough":"Bronx","lat":40.8093,"lng":-73.907,"income":27364,"year":2024,"pct":18,"afford":684},{"id":"BX03/06","name":"Morrisania/Belmont","borough":"Bronx","lat":40.842,"lng":-73.891,"income":32459,"year":2024,"pct":21,"afford":811},{"id":"BX04","name":"Highbridge/South Concourse","borough":"Bronx","lat":40.837,"lng":-73.923,"income":46442,"year":2024,"pct":30,"afford":1161},{"id":"BX05","name":"University Heights/Fordham","borough":"Bronx","lat":40.86,"lng":-73.905,"income":41844,"year":2024,"pct":27,"afford":1046},{"id":"BX07","name":"Kingsbridge Heights/Mosholu","borough":"Bronx","lat":40.8748,"lng":-73.899,"income":37294,"year":2023,"pct":24,"afford":932},{"id":"BX08","name":"Riverdale/Kingsbridge","borough":"Bronx","lat":40.89,"lng":-73.9064,"income":80096,"year":2024,"pct":52,"afford":2002},{"id":"BX09","name":"Soundview/Parkchester","borough":"Bronx","lat":40.833,"lng":-73.86,"income":43788,"year":2024,"pct":29,"afford":1095},{"id":"BX10","name":"Throgs Neck/Co-op City","borough":"Bronx","lat":40.825,"lng":-73.821,"income":72535,"year":2024,"pct":48,"afford":1813},{"id":"BX11","name":"Pelham Parkway","borough":"Bronx","lat":40.857,"lng":-73.855,"income":64310,"year":2024,"pct":42,"afford":1608},{"id":"BX12","name":"Williamsbridge/Baychester","borough":"Bronx","lat":40.878,"lng":-73.848,"income":68954,"year":2024,"pct":45,"afford":1724},{"id":"MN01/02","name":"Greenwich Village/Financial District","borough":"Manhattan","lat":40.7208,"lng":-74.0022,"income":208966,"year":2024,"pct":137,"afford":5224},{"id":"MN03","name":"Lower East Side/Chinatown","borough":"Manhattan","lat":40.715,"lng":-73.9843,"income":53968,"year":2024,"pct":35,"afford":1349},{"id":"MN04/05","name":"Chelsea/Clinton/Midtown","borough":"Manhattan","lat":40.7549,"lng":-73.9934,"income":124237,"year":2024,"pct":81,"afford":3106},{"id":"MN06","name":"Stuyvesant Town/Turtle Bay","borough":"Manhattan","lat":40.7359,"lng":-73.9762,"income":165808,"year":2024,"pct":109,"afford":4145},{"id":"MN07","name":"Upper West Side","borough":"Manhattan","lat":40.787,"lng":-73.9754,"income":152246,"year":2024,"pct":100,"afford":3806},{"id":"MN08","name":"Upper East Side","borough":"Manhattan","lat":40.7736,"lng":-73.9566,"income":168784,"year":2024,"pct":111,"afford":4220},{"id":"MN09","name":"Morningside Heights/Hamilton Heights","borough":"Manhattan","lat":40.8116,"lng":-73.9532,"income":69381,"year":2024,"pct":45,"afford":1735},{"id":"MN10","name":"Central Harlem","borough":"Manhattan","lat":40.8116,"lng":-73.943,"income":64162,"year":2024,"pct":42,"afford":1604},{"id":"MN11","name":"East Harlem","borough":"Manhattan","lat":40.7957,"lng":-73.9389,"income":41865,"year":2024,"pct":27,"afford":1047},{"id":"MN12","name":"Washington Heights/Inwood","borough":"Manhattan","lat":40.8518,"lng":-73.9351,"income":68547,"year":2024,"pct":45,"afford":1714},{"id":"QN01","name":"Astoria","borough":"Queens","lat":40.7644,"lng":-73.9235,"income":93456,"year":2024,"pct":61,"afford":2336},{"id":"QN02","name":"Sunnyside/Woodside","borough":"Queens","lat":40.7433,"lng":-73.9128,"income":99877,"year":2024,"pct":65,"afford":2497},{"id":"QN03","name":"Jackson Heights","borough":"Queens","lat":40.7557,"lng":-73.8831,"income":80440,"year":2024,"pct":53,"afford":2011},{"id":"QN04","name":"Elmhurst/Corona","borough":"Queens","lat":40.742,"lng":-73.873,"income":75899,"year":2024,"pct":50,"afford":1897},{"id":"QN05","name":"Middle Village/Ridgewood","borough":"Queens","lat":40.71,"lng":-73.889,"income":90269,"year":2024,"pct":59,"afford":2257},{"id":"QN06","name":"Rego Park/Forest Hills","borough":"Queens","lat":40.725,"lng":-73.852,"income":102402,"year":2024,"pct":67,"afford":2560},{"id":"QN07","name":"Flushing/Whitestone","borough":"Queens","lat":40.768,"lng":-73.827,"income":71126,"year":2024,"pct":47,"afford":1778},{"id":"QN08","name":"Hillcrest/Fresh Meadows","borough":"Queens","lat":40.729,"lng":-73.792,"income":89615,"year":2024,"pct":59,"afford":2240},{"id":"QN09","name":"Ozone Park/Woodhaven","borough":"Queens","lat":40.6902,"lng":-73.8524,"income":85197,"year":2024,"pct":56,"afford":2130},{"id":"QN10","name":"South Ozone Park/Howard Beach","borough":"Queens","lat":40.6669,"lng":-73.8316,"income":95571,"year":2024,"pct":63,"afford":2389},{"id":"QN11","name":"Bayside/Little Neck","borough":"Queens","lat":40.7628,"lng":-73.7694,"income":101333,"year":2024,"pct":66,"afford":2533},{"id":"QN12","name":"Jamaica","borough":"Queens","lat":40.702,"lng":-73.789,"income":73918,"year":2024,"pct":48,"afford":1848},{"id":"QN13","name":"Queens Village","borough":"Queens","lat":40.718,"lng":-73.738,"income":118749,"year":2024,"pct":78,"afford":2969},{"id":"QN14","name":"Rockaways","borough":"Queens","lat":40.586,"lng":-73.811,"income":72749,"year":2024,"pct":48,"afford":1819},{"id":"SI01","name":"North Shore","borough":"Staten Island","lat":40.639,"lng":-74.081,"income":90669,"year":2024,"pct":59,"afford":2267},{"id":"SI02","name":"Mid-Island","borough":"Staten Island","lat":40.595,"lng":-74.15,"income":94345,"year":2024,"pct":62,"afford":2359},{"id":"SI03","name":"South Shore","borough":"Staten Island","lat":40.543,"lng":-74.178,"income":117213,"year":2024,"pct":77,"afford":2930}];
+
+// rank by income ascending (1 = lowest income / biggest gap)
+const ranked = [...AREAS].sort((a, b) => a.income - b.income);
+ranked.forEach((a, i) => { a.rank = i + 1; });
+
+let selectedId = null;
+
+function fmt(n) { return "$" + Math.round(n).toLocaleString("en-US"); }
+function bandRent(inc) { return Math.round(inc * 0.30 / 12); }
+function colorFor(pct) {
+  if (pct < 25) return "#4A1414";
+  if (pct < 50) return "#D6472F";
+  if (pct < 75) return "#C99A2E";
+  return "#1F6F5C";
+}
+
+// ---- map ----
+const map = L.map('map', { scrollWheelZoom: false }).setView([40.70, -73.94], 10);
+map.attributionControl.setPrefix(false);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+const markers = {};
+AREAS.forEach(a => {
+  markers[a.id] = L.circleMarker([a.lat, a.lng], {
+    radius: 11, color: "#14181F", weight: 1.2,
+    fillColor: colorFor(a.pct), fillOpacity: 0.82,
+  }).addTo(map).on('click', () => select(a.id));
+});
+
+// ---- searchable list ----
+function renderList(q) {
+  const needle = (q || "").toLowerCase();
+  const rows = ranked.filter(a =>
+    !needle || a.name.toLowerCase().includes(needle) || a.id.toLowerCase().includes(needle) || a.borough.toLowerCase().includes(needle)
+  );
+  document.getElementById('hoodList').innerHTML = rows.map(a => `
+    <div class="hoodrow ${a.id === selectedId ? 'active' : ''}" onclick="select('${a.id}')">
+      <span class="hl">${a.name}<span class="hcd">${a.id} · ${a.borough}</span></span>
+      <span class="hpct" style="color:${a.id === selectedId ? '' : colorFor(a.pct)}">${a.pct}%</span>
+    </div>`).join('');
+}
+
+// ---- gap card ----
+function select(id, skipScroll) {
+  selectedId = id;
+  const a = AREAS.find(x => x.id === id);
+  const aboveAMI = a.pct >= 100;
+
+  const rows = [60, 80, 130].map(p => {
+    const rent = bandRent(REGIONAL * p / 100);
+    return { p, rent, mult: (rent / a.afford).toFixed(1) };
+  });
+  const maxVal = Math.max(a.afford, ...rows.map(r => r.rent));
+  const topRow = rows.find(r => r.p === 80);
+
+  const calloutHTML = aboveAMI
+    ? `<div class="callout ok">This area's median income sits <b>at or above</b> the regional AMI — "affordable" units here are priced within reach of the median local household, and function partly as a subsidy accessible to higher earners.</div>`
+    : `<div class="callout">A lottery unit priced at 80% AMI asks <b>${topRow.mult}× more rent</b> than the median household in ${a.name} can afford at the 30%-of-income standard.</div>`;
+
+  document.getElementById('gapCard').innerHTML = `
+    <div class="name">${a.name}</div>
+    <div class="borough">${a.borough.toUpperCase()} · ${a.id}</div>
+    <div class="bigstat ${aboveAMI ? 'ok' : ''}">${a.pct}% AMI</div>
+    <div class="rank">${a.rank <= 15 ? '#' + a.rank + ' lowest median income of 55 NYC areas' : a.rank >= 41 ? '#' + (56 - a.rank) + ' highest median income of 55 NYC areas' : 'Ranked #' + a.rank + ' of 55 NYC areas by median income (lowest to highest)'}</div>
+    <div class="desc">Median household income here: <b>${fmt(a.income)}</b> vs. regional 100% AMI ${fmt(REGIONAL)} (3-person).</div>
+
+    <div class="barrow">
+      <div class="lbl"><span>Rent this area can actually afford</span><b>${fmt(a.afford)}/mo</b></div>
+      <div class="track"><div class="fill afford" style="width:${(a.afford/maxVal*100).toFixed(1)}%"></div></div>
+    </div>
+    ${rows.map(r => `
+    <div class="barrow">
+      <div class="lbl"><span>"Affordable" unit at ${r.p}% AMI</span><b>${fmt(r.rent)}/mo · ${r.mult}×</b></div>
+      <div class="track"><div class="fill b${r.p}" style="width:${(r.rent/maxVal*100).toFixed(1)}%"></div></div>
+    </div>`).join('')}
+    ${calloutHTML}
+  `;
+
+  document.getElementById('searchBox').value = "";
+  renderList("");
+  if (!skipScroll) {
+    const activeRow = document.querySelector('.hoodrow.active');
+    if (activeRow) activeRow.scrollIntoView({ block: "nearest" });
+  }
+  if (markers[id]) map.panTo(markers[id].getLatLng());
+}
+
+
+renderList("");
+const SIZE_FACTORS_CALC = { 1: 0.70, 2: 0.80, 3: 0.90, 4: 1.00, 5: 1.08, 6: 1.16 };
+const AMI_BASE_4P = REGIONAL / SIZE_FACTORS_CALC[3];
+const BANDS = [30, 40, 50, 60, 80, 100, 130, 165];
+
+// ---- calculator ----
+
+function renderMeter(myPct) {
+  // scale 0–200%; zones colored by the site's gap palette
+  const zones = [
+    { to: 30,  c: "#155246" },
+    { to: 50,  c: "#1F6F5C" },
+    { to: 80,  c: "#7FA88C" },
+    { to: 100, c: "#C99A2E" },
+    { to: 130, c: "#D6472F" },
+    { to: 165, c: "#8B2A1E" },
+    { to: 200, c: "#4A1414" },
+  ];
+  let prev = 0, html = "";
+  zones.forEach(z => {
+    html += `<div class="mzone" style="width:${(z.to - prev) / 2}%;background:${z.c};"></div>`;
+    prev = z.to;
+  });
+  const clamped = Math.max(0, Math.min(myPct, 200));
+  html += `<div class="meter-marker" style="left:${clamped / 2}%;"></div>`;
+  document.getElementById('meterZones').innerHTML = html;
+
+  // reference points: real neighborhood medians as % of AMI
+  const refs = [
+    { pct: 18,  label: "Mott Haven" },
+    { pct: 55,  label: "Citywide" },
+    { pct: 100, label: "UWS" },
+    { pct: 137, label: "FiDi" },
+  ];
+  document.getElementById('meterRefs').innerHTML = refs.map(r =>
+    `<div class="mref" style="left:${Math.min(r.pct, 200) / 2}%;">${r.label}<br>${r.pct}%</div>`
+  ).join('');
+}
+
+function showMyNumbers() {
+  const income = parseFloat(document.getElementById('incomeInput').value);
+  const size = parseInt(document.getElementById('sizeInput').value, 10);
+  if (!income || income <= 0) { alert("Enter your gross annual household income to see your numbers."); return; }
+
+  const base100 = AMI_BASE_4P * SIZE_FACTORS_CALC[size];
+  const myPct = Math.round((income / base100) * 100);
+  const myAfford = Math.round(income * 0.30 / 12);
+
+  const refFloor = 684; // Mott Haven/Hunts Point — lowest-income area citywide
+
+  let myBand = null;
+  for (const p of BANDS) {
+    if (income <= Math.round(base100 * (p / 100))) { myBand = p; break; }
+  }
+
+  document.getElementById('myStat').innerHTML =
+    `${size}-person household earning ${fmt(income)}/yr ≈ <b>${myPct}% of regional AMI</b>. ` +
+    `Rent genuinely affordable to you at the 30% standard: <b>${fmt(myAfford)}/mo</b>.` +
+    (myBand ? ` You'd fall within the <b>${myBand}% AMI</b> band and below.` : ` Your income is above the 165% AMI ceiling — above all lottery bands.`);
+
+  document.getElementById('resultsBody').innerHTML = BANDS.map(p => {
+    const bandInc = Math.round(base100 * (p / 100));
+    const rent = bandRent(bandInc);
+    const cls = (p === myBand) ? 'mine' : (rent > refFloor ? 'hi' : '');
+    return `<tr class="${cls}"><td><b>${p}% AMI</b></td><td>${fmt(bandInc)}</td><td>${fmt(rent)}/mo</td></tr>`;
+  }).join('');
+
+  renderMeter(myPct);
+  document.getElementById('resultsCard').style.display = 'block';
+}
+
+
+select('BX01/02', true);
+</script>
+</body>
+</html>
