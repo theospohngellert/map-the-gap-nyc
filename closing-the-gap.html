@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>What Would Close the Gap &mdash; Map the Gap NYC</title>
+<style>
+  :root {
+    --paper: #EDECE5; --card: #FBFAF6; --ink: #14181F; --gray: #5B6472;
+    --line: #14181F; --hair: #D8D6CB; --red: #C1272D; --red-dark: #3D0E0E;
+    --amber: #C99A2E; --teal: #1F6F5C; --pink-bg: #F5E1DF;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 28px 18px 80px; }
+  .topnav { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
+    margin-bottom:26px; padding-bottom:14px; border-bottom:1.5px solid var(--line); }
+  .brand-link { display: inline-flex; align-items: center; text-decoration: none; }
+  .brand-logo { height: 110px; width: auto; display: block; }
+  @media (max-width: 480px) { .brand-logo { height: 78px; } }
+  .navlinks { display:flex; gap:16px; flex-wrap:wrap; }
+  .navlinks a { font-size:13.5px; font-weight:700; color:var(--ink); text-decoration:none;
+    border-bottom:2px solid transparent; padding-bottom:1px; }
+  .navlinks a:hover, .navlinks a.current { border-bottom-color:var(--red); }
+  h2.section { font-size: 26px; font-weight: 900; letter-spacing: -0.01em; margin: 0 0 8px; }
+  section.block { margin-bottom: 44px; }
+  .about-body { font-size:15.5px; line-height:1.65; color:#2C3340; max-width:640px; }
+  .about-body p { margin:0 0 16px; }
+  .about-body a { color:var(--red); font-weight:700; }
+  .about-body h3 { font-size:22px; font-weight:900; color:var(--ink); margin:34px 0 12px; }
+  .about-body h4 { font-size:15.5px; font-weight:900; color:var(--ink); margin:22px 0 6px; }
+  .lead-in { font-size:15.5px; line-height:1.65; }
+  .fig { background:var(--card); border:2px solid var(--line); border-radius:3px; padding:20px 22px 22px; margin:24px 0; }
+  .fig h4 { font-size:13.5px; font-weight:900; letter-spacing:0.04em; text-transform:uppercase; margin:0 0 4px; }
+  .fig .fignote { font-size:12.5px; color:var(--gray); margin:0 0 16px; line-height:1.4; }
+  .tablewrap { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -4px; }
+  table.gaptable { border-collapse:collapse; width:100%; min-width:0; font-size:12px; }
+  table.gaptable th { text-align:right; padding:0 5px 8px; font-size:10px; font-weight:900;
+    letter-spacing:0.05em; text-transform:uppercase; color:var(--gray);
+    border-bottom:1.5px solid var(--line); vertical-align:bottom; }
+  table.gaptable th:first-child { text-align:left; }
+  table.gaptable th .bandrent { display:block; font-size:9.5px; font-weight:400; letter-spacing:0;
+    text-transform:none; font-family:ui-monospace,"SF Mono",Menlo,monospace; color:var(--gray); }
+  table.gaptable td { padding:8px 5px; border-bottom:1px solid var(--hair); text-align:right;
+    font-family:ui-monospace,"SF Mono",Menlo,monospace; white-space:nowrap; }
+  table.gaptable td:first-child { text-align:left; font-family:inherit; white-space:normal; font-size:12px; }
+  table.gaptable tr:last-child td { border-bottom:none; }
+  td.short { color:var(--red-dark); font-weight:700; background:#F5E1DF; }
+  td.ok { color:var(--teal); font-weight:700; background:#E4EFEA; font-family:inherit; font-size:11.5px; }
+  .legendrow { display:flex; gap:20px; flex-wrap:wrap; font-size:12.5px; color:var(--gray); margin-top:14px; align-items:center; }
+  .legendrow i { display:inline-block; width:11px; height:11px; border:1.5px solid var(--line);
+    border-radius:2px; vertical-align:-1px; margin-right:6px; }
+  .callout-box { background:var(--card); border:2px solid var(--line); border-left:6px solid var(--red);
+    border-radius:3px; padding:18px 20px; margin:24px 0; font-size:15.5px; line-height:1.65; }
+  .foot-note { font-size: 12.5px; color: var(--gray); line-height: 1.5; padding: 14px 0 4px;
+    border-top:1px solid var(--hair); margin-top:34px; }
+</style>
+<meta name="description" content="Recalculating AMI would not build a single home. What would actually close the gap between what affordable housing costs and what New York neighborhoods can pay." />
+<link rel="canonical" href="https://mapthegap.nyc/closing-the-gap.html" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Map the Gap NYC" />
+<meta property="og:title" content="What Would Close the Gap &mdash; Map the Gap NYC" />
+<meta property="og:description" content="Recalculating AMI would not build a single home. What would actually close the gap between what affordable housing costs and what New York neighborhoods can pay." />
+<meta property="og:url" content="https://mapthegap.nyc/closing-the-gap.html" />
+<meta property="og:image" content="https://mapthegap.nyc/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="What Would Close the Gap &mdash; Map the Gap NYC" />
+<meta name="twitter:description" content="Recalculating AMI would not build a single home. What would actually close the gap between what affordable housing costs and what New York neighborhoods can pay." />
+<meta name="twitter:image" content="https://mapthegap.nyc/og-image.png" />
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="topnav">
+    <a href="index.html" class="brand-link" aria-label="Map the Gap NYC — home"><img src="logo_transparent.png" alt="Map the Gap NYC" class="brand-logo"></a>
+    <div class="navlinks">
+      <a href="index.html">Map</a>
+      <a href="about.html">About</a>
+      <a href="closing-the-gap.html" class="current">Closing the Gap</a>
+      <a href="contact.html">Contact</a>
+    </div>
+  </nav>
+
+  <section class="block">
+    <h2 class="section">What Would Close the Gap</h2>
+    <div class="about-body">
+
+      <p class="lead-in">The income band that reaches low-income New Yorkers already exists. A unit priced at 30% of AMI rents for $1,145 a month, and in 49 of the city&rsquo;s 55 neighborhoods the median household can afford it. Under the <a href="about.html#block-by-block">Block by Block plan</a>, the 30% AMI band receives 30% of HPD-financed new construction, while half of that production goes to units priced above 50% AMI.</p>
+
+      <p>That makes this a question of allocation rather than one of how AMI is calculated.</p>
+
+      <p>Which is why the first thing worth saying is what <i>wouldn&rsquo;t</i> close the gap. Recalculating AMI wouldn&rsquo;t build a single additional home. If HUD published a Bronx-specific income limit tomorrow, construction costs, land costs, and operating costs would all be exactly what they are today. The only change would be how much subsidy each unit needs to hit a lower rent. On a fixed budget, this means building fewer affordable units.</p>
+
+      <p>The shortage in affordable housing isn&rsquo;t caused by the AMI benchmark, but instead exists due to the distance between what housing costs to build and operate and what low-income households can afford to pay. Only money closes that distance; the current AMI benchmark hides it.</p>
+
+      <p>The calculation still matters &mdash; it is why a unit priced for a three-person household earning $122,160 can be announced as low-income housing, and why the label &ldquo;affordable housing&rdquo; carries no information about the neighborhood receiving it. Understanding how AMI is calculated is what makes it possible to read that label accurately.</p>
+
+      <h3>Five Ways to Close It</h3>
+
+      <h4>Rental Assistance</h4>
+      <p>This is the only instrument that closes the gap by definition: the tenant pays a fixed share of income and a subsidy covers the remainder, regardless of what the AMI benchmark says.</p>
+
+      <h4>Deeper Capital Targeting</h4>
+      <p>More units allocated for New Yorkers earning 30% and 50% AMI. Of the roughly 8,000 homes a year HPD will finance under the <a href="about.html#block-by-block">Block by Block plan</a>, 30% are reserved for households earning under 30% of AMI and 20% for households earning between 31% and 50%. The other half goes to households earning above 50% AMI.</p>
+
+      <h4>Permanent Affordability</h4>
+      <p>Community land trusts, limited-equity cooperatives, and social housing remove units from the speculative market rather than restricting rents for a term that eventually expires.</p>
+
+      <h4>More Housing</h4>
+      <p>Increasing overall supply is the standard response to a shortage of affordable housing, and is the premise of the zoning components of Block by Block.</p>
+
+      <h4>Higher Incomes</h4>
+      <p>The median household in Mott Haven earns $27,364. No affordability formula makes that number work.</p>
+
+      <h3>Where Each Band Lands</h3>
+
+      <p>Every &ldquo;affordable&rdquo; unit carries an implicit subsidy: the difference between what it charges and what a household can pay at the standard 30% of income threshold. That distance is small at the 30% band and grows quickly above it.</p>
+
+      <div class="fig">
+        <h4>Can this neighborhood afford its own &ldquo;affordable&rdquo; housing?</h4>
+        <p class="fignote">Each column is an AMI band and the monthly rent a unit in that band charges. Each row is a neighborhood and what its median household can actually pay. Red cells show how much more the rent asks than the household can afford.</p>
+        <div class="tablewrap">
+          <table class="gaptable">
+            <thead>
+              <tr>
+                <th>Neighborhood</th>
+                <th>Median household<br>can afford</th>
+                <th>Unit at 30% AMI<span class="bandrent">rents for $1,145</span></th>
+                <th>Unit at 50% AMI<span class="bandrent">rents for $1,909</span></th>
+                <th>Unit at 80% AMI<span class="bandrent">rents for $3,054</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Mott Haven / Hunts Point</td><td>$684</td><td class="short">$461 too much</td><td class="short">$1,225 too much</td><td class="short">$2,370 too much</td></tr>
+              <tr><td>East Harlem</td><td>$1,047</td><td class="short">$98 too much</td><td class="short">$862 too much</td><td class="short">$2,007 too much</td></tr>
+              <tr><td>Washington Heights / Inwood</td><td>$1,714</td><td class="ok">affordable</td><td class="short">$195 too much</td><td class="short">$1,340 too much</td></tr>
+              <tr><td>East Flatbush</td><td>$1,897</td><td class="ok">affordable</td><td class="short">$12 too much</td><td class="short">$1,157 too much</td></tr>
+              <tr><td>Queens Village</td><td>$2,969</td><td class="ok">affordable</td><td class="ok">affordable</td><td class="short">$85 too much</td></tr>
+              <tr><td>Upper West Side</td><td>$3,806</td><td class="ok">affordable</td><td class="ok">affordable</td><td class="ok">affordable</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="legendrow">
+          <span><i style="background:#E4EFEA;"></i>the median household here can afford this unit</span>
+          <span><i style="background:#F5E1DF;"></i>the rent exceeds what they can pay</span>
+        </div>
+      </div>
+
+      <h3>The 80% Band</h3>
+
+      <p>80% of AMI is the ceiling of HPD&rsquo;s &ldquo;Low Income&rdquo; category, meaning a three-person household earning $122,160 or less is considered low income by the city. A unit priced at that ceiling rents for $3,054 a month.</p>
+
+      <p>Only 7 of the city&rsquo;s 55 neighborhoods have a median household that can afford this. In the other 48 neighborhoods, a unit at the top of the &ldquo;low-income&rdquo; range is priced beyond what the typical household can afford to pay.</p>
+
+      <h3>What Map the Gap NYC Advocates For</h3>
+
+      <p>Not a new formula to calculate AMI, but better reporting.</p>
+
+      <p>Affordable housing projects in NYC are priced by their AMI band. That label is regional, so it carries little to no information about the neighborhood receiving the units: an 80% AMI unit reads identically in Chelsea, where the median household can afford it, and in Mott Haven, where the same unit costs 4.5&times; what the median household can pay.</p>
+
+      <div class="callout-box">
+        The change Map the Gap NYC supports is narrow: <b>report each unit&rsquo;s affordability against the median income of the neighborhood it is built in, alongside the regional figure.</b>
+      </div>
+
+      <p>This would make visible, at the moment a project is announced, how it relates to the people already living there.</p>
+
+      <p class="foot-note">Every figure on this page compares against a neighborhood&rsquo;s median household. Half of each neighborhood earns less than that, so a unit affordable to the median household remains out of reach for the bottom half of the same neighborhood. The gaps shown here are purposefully conservative.</p>
+
+    </div>
+  </section>
+
+</div>
+<!-- GoatCounter analytics -->
+<script data-goatcounter="https://mapthegap.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
